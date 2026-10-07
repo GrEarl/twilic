@@ -16,6 +16,14 @@ This repository contains the specification, shared conformance material, and ind
 - `testdata/`
 - `runtimes/<language>/`
 
+## AI Assistance
+
+AI tools may help write code, tests, and documentation.
+
+Issues and pull requests must still be created by a human after review. Do not open them from AI output alone. Confirm the claim with a reproduction, failing test, linked discussion, or other concrete evidence before filing.
+
+Keep issue and PR text short and concrete. Avoid long, generic phrasing that reads like unedited AI output.
+
 ## Editorial Rules
 
 - Write all new content in English.
@@ -97,6 +105,8 @@ After `bun install`, Husky runs Commitlint on each local commit. Pull requests a
 
 ## Contribution Checklist
 
+- Issues and pull requests were human-reviewed and backed by concrete evidence.
+- Issue and PR text stays short and concrete.
 - The affected requirements were updated in the right file.
 - Cross-references still point to the right document.
 - `README.md` still reflects the public repository layout.

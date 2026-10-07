@@ -46,6 +46,8 @@ Closes #
 
 ## Checklist
 
+- [ ] A human reviewed this PR before opening it
+- [ ] The change is backed by a linked issue, reproduction, test, or other concrete evidence
 - [ ] Tests added or updated (optional)
 - [ ] Documentation updated (if applicable)
 - [ ] Formatting and lint checks pass

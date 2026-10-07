@@ -94,3 +94,7 @@ body:
           required: true
         - label: I can reproduce this issue with the latest version.
           required: true
+        - label: A human reviewed this report before filing it, and it is backed by a reproduction or other concrete evidence.
+          required: true
+        - label: The description is short and concrete, not unedited AI phrasing.
+          required: true

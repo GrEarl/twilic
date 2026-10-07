@@ -78,3 +78,7 @@ body:
       options:
         - label: I have searched for existing issues and discussions.
           required: true
+        - label: A human reviewed this request before filing it, and it is backed by a concrete use case or other evidence.
+          required: true
+        - label: The description is short and concrete, not unedited AI phrasing.
+          required: true

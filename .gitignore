@@ -10,6 +10,8 @@ node_modules/
 **/.kotlin/
 **/_build/
 **/build/
+**/build-san/
+**/build-fuzz/
 **/dist/
 **/target/
 **/.zig-cache/

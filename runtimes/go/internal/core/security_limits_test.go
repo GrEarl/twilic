@@ -2,6 +2,7 @@ package core
 
 import (
 	"bytes"
+	"math"
 	"testing"
 )
 
@@ -20,6 +21,18 @@ func TestSecurityOversizedStrRefDoesNotPanic(t *testing.T) {
 	data := []byte{0xd9, 0xf8, 0x8c, 0xa6, 0xe1, 0xa1, 0x92, 0x8f, 0x84, 0x84, 0x01}
 	if _, err := Decode(data); err == nil {
 		t.Fatal("missing str_ref rejection")
+	}
+}
+
+func TestSecurityI64ForOverflowDoesNotWrap(t *testing.T) {
+	// Typed-vector FOR reconstruction must reject overflowing additions.
+	shifted := []int64{math.MaxInt64}
+	var payload []byte
+	encodeVaruint(encodeZigzag(1), &payload)
+	encodeI64DirectBitpack(shifted, &payload)
+	reader := newReader(payload)
+	if _, err := decodeI64Vector(reader, VectorCodecForBitpack); err == nil {
+		t.Fatal("missing i64 FOR overflow rejection")
 	}
 }
 

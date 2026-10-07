@@ -87,7 +87,11 @@ func decodeI64Vector(reader *Reader, codec VectorCodec) ([]int64, error) {
 		}
 		out := make([]int64, len(shifted))
 		for i, v := range shifted {
-			out[i] = v + minValue
+			sum, ok := checkedAddI64(v, minValue)
+			if !ok {
+				return nil, invalidData("i64 FOR overflow")
+			}
+			out[i] = sum
 		}
 		return out, nil
 	case VectorCodecDeltaForBitpack:
@@ -105,7 +109,11 @@ func decodeI64Vector(reader *Reader, codec VectorCodec) ([]int64, error) {
 		}
 		deltas := make([]int64, len(shifted))
 		for i, v := range shifted {
-			deltas[i] = v + minValue
+			sum, ok := checkedAddI64(v, minValue)
+			if !ok {
+				return nil, invalidData("i64 FOR overflow")
+			}
+			deltas[i] = sum
 		}
 		return undelta(deltas)
 	case VectorCodecDeltaDeltaBitpack:
@@ -812,11 +820,17 @@ func decodeXorFloat(reader *Reader) ([]float64, error) {
 			if err != nil {
 				return nil, err
 			}
+			if leading > 64 || trailing > 64 || width > 64 {
+				return nil, invalidData("xor-float bit widths")
+			}
 			if leading+trailing+width > 64 {
 				return nil, invalidData("xor-float bit widths")
 			}
 			x := payload
 			if width != 64 {
+				if trailing >= 64 {
+					return nil, invalidData("xor-float shift")
+				}
 				x = payload << trailing
 			}
 			bitsValue = prev ^ x

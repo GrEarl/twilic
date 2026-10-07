@@ -57,7 +57,13 @@ pub fn decode_i64_vector(reader: &mut Reader<'_>, codec: VectorCodec) -> Result<
                 return Ok(Vec::new());
             }
             let shifted = decode_i64_direct_bitpack(reader)?;
-            Ok(shifted.into_iter().map(|v| v + min).collect())
+            shifted
+                .into_iter()
+                .map(|v| {
+                    v.checked_add(min)
+                        .ok_or(TwilicError::InvalidData("i64 FOR overflow"))
+                })
+                .collect()
         }
         VectorCodec::DeltaForBitpack => {
             let min = decode_zigzag(reader.read_varuint()?);
@@ -65,7 +71,13 @@ pub fn decode_i64_vector(reader: &mut Reader<'_>, codec: VectorCodec) -> Result<
                 return Ok(Vec::new());
             }
             let shifted = decode_i64_direct_bitpack(reader)?;
-            let deltas: Vec<i64> = shifted.into_iter().map(|v| v + min).collect();
+            let deltas = shifted
+                .into_iter()
+                .map(|v| {
+                    v.checked_add(min)
+                        .ok_or(TwilicError::InvalidData("i64 FOR overflow"))
+                })
+                .collect::<Result<Vec<_>>>()?;
             undelta(deltas)
         }
         VectorCodec::DeltaDeltaBitpack => decode_i64_delta_delta(reader),
@@ -577,13 +589,19 @@ fn decode_xor_float(reader: &mut Reader<'_>) -> Result<Vec<f64>> {
             let trailing = reader.read_varuint()?;
             let width = reader.read_varuint()?;
             let payload = reader.read_varuint()?;
-            if leading + trailing + width > 64 {
+            if leading > 64
+                || trailing > 64
+                || width > 64
+                || leading.saturating_add(trailing).saturating_add(width) > 64
+            {
                 return Err(TwilicError::InvalidData("xor-float bit widths"));
             }
             let x = if width == 64 {
                 payload
             } else {
-                payload << trailing
+                payload
+                    .checked_shl(u32::try_from(trailing).unwrap_or(u32::MAX))
+                    .ok_or(TwilicError::InvalidData("xor-float shift"))?
             };
             prev ^ x
         };

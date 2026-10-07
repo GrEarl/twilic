@@ -118,7 +118,7 @@ fn xor_float_roundtrip_smooth_series() {
 
 #[test]
 fn signed_for_codecs_reject_base_addition_overflow() {
-    // The bitpacked zigzag value is -1, so adding i64::MIN underflows.
+    // The bitpacked zigzag value is i64::MIN, so adding that base underflows.
     let mut bytes = Vec::new();
     encode_varuint(u64::MAX, &mut bytes);
     bytes.extend_from_slice(&[1, 64]);
@@ -146,12 +146,14 @@ fn signed_for_codecs_preserve_in_range_values() {
 }
 
 #[test]
-fn xor_float_rejects_width_sum_overflow_and_invalid_shifts() {
-    for (leading, trailing, width) in [
-        (u64::MAX, 0, u64::MAX),
-        (u64::MAX, 1, 0),
-        (0, 64, 0),
-        (0, 65, 0),
+fn xor_float_rejects_invalid_widths_and_shifts() {
+    for (leading, trailing, width, expected_message) in [
+        (u64::MAX, 0, u64::MAX, "xor-float bit widths"),
+        (u64::MAX, 1, 0, "xor-float bit widths"),
+        // Each component is valid individually, but their sum is 65.
+        (1, 63, 1, "xor-float bit widths"),
+        (0, 64, 0, "xor-float shift"),
+        (0, 65, 0, "xor-float bit widths"),
     ] {
         let mut bytes = vec![2];
         bytes.extend_from_slice(&0f64.to_le_bytes());
@@ -160,6 +162,9 @@ fn xor_float_rejects_width_sum_overflow_and_invalid_shifts() {
             encode_varuint(value, &mut bytes);
         }
         let error = decode_f64_vector(&mut Reader::new(&bytes), VectorCodec::XorFloat).unwrap_err();
-        assert!(error.to_string().contains("xor-float"));
+        assert!(
+            matches!(error, TwilicError::InvalidData(message) if message == expected_message),
+            "leading={leading}, trailing={trailing}, width={width}: {error:?}"
+        );
     }
 }

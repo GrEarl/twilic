@@ -7,7 +7,7 @@ use twilic_rust::{
         encode_i64_vector, encode_u64_vector,
     },
     model::VectorCodec,
-    wire::{DECODE_OUTPUT_RATIO_MSG, Reader, encode_varuint},
+    wire::{DECODE_OUTPUT_RATIO_MSG, Reader, encode_varuint, encode_zigzag},
 };
 
 #[test]
@@ -75,6 +75,24 @@ fn for_u64_overflow_is_rejected() {
     let err =
         decode_u64_vector(&mut reader, VectorCodec::ForBitpack).expect_err("overflow expected");
     assert!(matches!(err, TwilicError::InvalidData("u64 FOR overflow")));
+}
+
+#[test]
+fn patched_for_i64_overflow_is_rejected() {
+    let mut bytes = Vec::new();
+    encode_varuint(1, &mut bytes);
+    encode_varuint(encode_zigzag(i64::MAX), &mut bytes);
+    bytes.push(0);
+    encode_varuint(1, &mut bytes);
+    encode_varuint(0, &mut bytes);
+
+    let mut reader = Reader::new(&bytes);
+    let err = decode_i64_vector(&mut reader, VectorCodec::PatchedFor)
+        .expect_err("overflow expected");
+    assert!(matches!(
+        err,
+        TwilicError::InvalidData("i64 patched FOR overflow")
+    ));
 }
 
 #[test]

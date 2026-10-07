@@ -36,6 +36,20 @@ func TestSecurityI64ForOverflowDoesNotWrap(t *testing.T) {
 	}
 }
 
+func TestSecurityI64PatchedForOverflowDoesNotWrap(t *testing.T) {
+	// Patched FOR reconstruction must reject overflowing base additions.
+	var payload []byte
+	encodeVaruint(1, &payload)                      // length
+	encodeVaruint(encodeZigzag(math.MaxInt64), &payload) // base
+	payload = append(payload, 0)                    // base width
+	encodeVaruint(1, &payload)                      // main value
+	encodeVaruint(0, &payload)                      // patch count
+	reader := newReader(payload)
+	if _, err := decodeI64Vector(reader, VectorCodecPatchedFor); err == nil {
+		t.Fatal("missing i64 patched FOR overflow rejection")
+	}
+}
+
 func TestSecurityReaderBudgets(t *testing.T) {
 	r := newReader([]byte{0})
 	if err := r.claimOutput(100); err != nil {

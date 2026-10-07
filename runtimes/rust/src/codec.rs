@@ -535,7 +535,13 @@ fn decode_i64_patched_for(reader: &mut Reader<'_>) -> Result<Vec<i64>> {
             *slot = patch;
         }
     }
-    Ok(values.into_iter().map(|v| v + base).collect())
+    values
+        .into_iter()
+        .map(|v| {
+            v.checked_add(base)
+                .ok_or(TwilicError::InvalidData("i64 patched FOR overflow"))
+        })
+        .collect()
 }
 
 fn encode_xor_float(values: &[f64], out: &mut Vec<u8>) {

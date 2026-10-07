@@ -747,7 +747,11 @@ func decodeI64PatchedFor(reader *Reader) ([]int64, error) {
 	}
 	out := make([]int64, len(values))
 	for i, v := range values {
-		out[i] = v + base
+		sum, ok := checkedAddI64(v, base)
+		if !ok {
+			return nil, invalidData("i64 patched FOR overflow")
+		}
+		out[i] = sum
 	}
 	return out, nil
 }

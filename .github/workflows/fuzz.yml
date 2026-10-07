@@ -44,4 +44,8 @@ jobs:
         working-directory: runtimes/rust
         env:
           DURATION: ${{ github.event_name == 'schedule' && '900' || github.event.inputs.duration || '60' }}
-        run: cargo fuzz run "${{ matrix.target }}" -- -max_total_time="${DURATION}"
+        run: |
+          set -euo pipefail
+          mkdir -p "fuzz/corpus/${{ matrix.target }}"
+          cp -R "fuzz/seed_corpus/${{ matrix.target }}/." "fuzz/corpus/${{ matrix.target }}/"
+          cargo +nightly fuzz run "${{ matrix.target }}" -- -max_total_time="${DURATION}"

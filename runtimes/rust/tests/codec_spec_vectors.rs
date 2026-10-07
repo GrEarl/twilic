@@ -87,8 +87,8 @@ fn patched_for_i64_overflow_is_rejected() {
     encode_varuint(0, &mut bytes);
 
     let mut reader = Reader::new(&bytes);
-    let err = decode_i64_vector(&mut reader, VectorCodec::PatchedFor)
-        .expect_err("overflow expected");
+    let err =
+        decode_i64_vector(&mut reader, VectorCodec::PatchedFor).expect_err("overflow expected");
     assert!(matches!(
         err,
         TwilicError::InvalidData("i64 patched FOR overflow")
@@ -114,4 +114,52 @@ fn xor_float_roundtrip_smooth_series() {
     let mut reader = Reader::new(&out);
     let decoded = decode_f64_vector(&mut reader, VectorCodec::XorFloat).expect("decode xor float");
     assert_eq!(decoded, values);
+}
+
+#[test]
+fn signed_for_codecs_reject_base_addition_overflow() {
+    // The bitpacked zigzag value is -1, so adding i64::MIN underflows.
+    let mut bytes = Vec::new();
+    encode_varuint(u64::MAX, &mut bytes);
+    bytes.extend_from_slice(&[1, 64]);
+    bytes.extend_from_slice(&[0xff; 8]);
+    for codec in [VectorCodec::ForBitpack, VectorCodec::DeltaForBitpack] {
+        let error = decode_i64_vector(&mut Reader::new(&bytes), codec).unwrap_err();
+        assert!(matches!(
+            error,
+            TwilicError::InvalidData("i64 FOR overflow")
+        ));
+    }
+}
+
+#[test]
+fn signed_for_codecs_preserve_in_range_values() {
+    let values = [-20, -18, -15, -10];
+    for codec in [VectorCodec::ForBitpack, VectorCodec::DeltaForBitpack] {
+        let mut bytes = Vec::new();
+        encode_i64_vector(&values, codec, &mut bytes);
+        assert_eq!(
+            decode_i64_vector(&mut Reader::new(&bytes), codec).unwrap(),
+            values
+        );
+    }
+}
+
+#[test]
+fn xor_float_rejects_width_sum_overflow_and_invalid_shifts() {
+    for (leading, trailing, width) in [
+        (u64::MAX, 0, u64::MAX),
+        (u64::MAX, 1, 0),
+        (0, 64, 0),
+        (0, 65, 0),
+    ] {
+        let mut bytes = vec![2];
+        bytes.extend_from_slice(&0f64.to_le_bytes());
+        bytes.push(1);
+        for value in [leading, trailing, width, 0] {
+            encode_varuint(value, &mut bytes);
+        }
+        let error = decode_f64_vector(&mut Reader::new(&bytes), VectorCodec::XorFloat).unwrap_err();
+        assert!(error.to_string().contains("xor-float"));
+    }
 }

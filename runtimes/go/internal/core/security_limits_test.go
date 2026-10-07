@@ -15,6 +15,14 @@ func TestSecurityDecodeDepth(t *testing.T) {
 	}
 }
 
+func TestSecurityOversizedStrRefDoesNotPanic(t *testing.T) {
+	// str_ref (0xd9) with a large varuint id must reject without panicking.
+	data := []byte{0xd9, 0xf8, 0x8c, 0xa6, 0xe1, 0xa1, 0x92, 0x8f, 0x84, 0x84, 0x01}
+	if _, err := Decode(data); err == nil {
+		t.Fatal("missing str_ref rejection")
+	}
+}
+
 func TestSecurityReaderBudgets(t *testing.T) {
 	r := newReader([]byte{0})
 	if err := r.claimOutput(100); err != nil {

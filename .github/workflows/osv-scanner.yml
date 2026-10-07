@@ -1,4 +1,4 @@
-name: OSV-Scanner
+name: "Security: Dependencies (OSV-Scanner)"
 
 on:
   pull_request:

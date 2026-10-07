@@ -1,4 +1,4 @@
-name: Fuzz
+name: "Security: Fuzzing"
 
 on:
   pull_request:

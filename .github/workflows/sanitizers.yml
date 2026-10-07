@@ -1,4 +1,4 @@
-name: Sanitizers
+name: "Security: Memory sanitizers (ASan/UBSan)"
 
 on:
   push:

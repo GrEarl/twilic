@@ -1,6 +1,8 @@
 name: Interop
 
 on:
+  schedule:
+    - cron: "15 7 * * 0"
   workflow_dispatch:
     inputs:
       runtime:
@@ -31,20 +33,20 @@ permissions:
   contents: read
 
 concurrency:
-  group: interop-${{ github.event.inputs.runtime }}-${{ github.ref }}
+  group: interop-${{ github.event.inputs.runtime || 'all' }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   select:
     name: Select runtimes
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       matrix: ${{ steps.select.outputs.matrix }}
     steps:
       - name: Build matrix
         id: select
         env:
-          RUNTIME: ${{ inputs.runtime }}
+          RUNTIME: ${{ inputs.runtime || 'all' }}
         run: |
           set -euo pipefail
           if [ "${RUNTIME}" = "all" ]; then

@@ -1,0 +1,8 @@
+title = "twilic"
+
+[allowlist]
+description = "Constant names that trip generic-api-key"
+regexTarget = "match"
+regexes = [
+  '''MAX_V2_SHAPE_KEY_COUNT''',
+]

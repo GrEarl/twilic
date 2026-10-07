@@ -119,7 +119,7 @@ func decodeTrainedDictionaryBlock(block []byte, dictionary []string) ([]string, 
 	}
 	out := make([]string, 0, len(ids))
 	for _, id := range ids {
-		if int(id) >= len(dictionary) {
+		if id >= uint64(len(dictionary)) {
 			return nil, invalidData("trained dictionary block id")
 		}
 		out = append(out, dictionary[id])

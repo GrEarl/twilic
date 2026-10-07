@@ -1085,7 +1085,7 @@ func (c *TwilicCodec) readValueWithField(reader *Reader, fieldIdentity *string) 
 			if err != nil {
 				return Value{}, err
 			}
-			if int(code) >= len(enumVals) {
+			if code >= uint64(len(enumVals)) {
 				return Value{}, invalidData("inline enum code")
 			}
 			return NewString(enumVals[code]), nil
@@ -1332,7 +1332,7 @@ func (c *TwilicCodec) readSchemaFieldValue(field *SchemaField, reader *Reader) (
 			if err != nil {
 				return Value{}, err
 			}
-			if int(code) >= len(field.EnumValues) {
+			if code >= uint64(len(field.EnumValues)) {
 				return Value{}, invalidData("schema string enum code")
 			}
 			return NewString(field.EnumValues[code]), nil
@@ -2196,7 +2196,7 @@ func (c *TwilicCodec) readStringVector(reader *Reader, codec VectorCodec) ([]str
 		}
 		out := make([]string, len(refs))
 		for i := range refs {
-			if int(refs[i]) >= len(dict) {
+			if refs[i] >= uint64(len(dict)) {
 				return nil, invalidData("dictionary reference")
 			}
 			out[i] = dict[refs[i]]

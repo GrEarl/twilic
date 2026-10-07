@@ -65,7 +65,7 @@ func (t *InternTable) GetID(value string) (uint64, bool) {
 }
 
 func (t *InternTable) GetValue(id uint64) (string, bool) {
-	if int(id) >= len(t.ByID) {
+	if id >= uint64(len(t.ByID)) {
 		return "", false
 	}
 	return t.ByID[id], true

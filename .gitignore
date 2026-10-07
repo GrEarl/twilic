@@ -10,6 +10,8 @@ node_modules/
 **/.kotlin/
 **/_build/
 **/build/
+**/build-san/
+**/build-fuzz/
 **/dist/
 **/target/
 **/.zig-cache/
@@ -17,3 +19,4 @@ node_modules/
 **/vendor/
 **/native/*.node
 **/wasm/pkg/*.wasm
+**/build-*-check/

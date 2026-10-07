@@ -326,7 +326,12 @@ std::vector<uint64_t> decode_u64_vector(Reader& reader, VectorCodec codec) {
       const auto shifted = decode_u64_direct_bitpack(reader);
       std::vector<uint64_t> out;
       out.reserve(shifted.size());
-      for (const auto v : shifted) out.push_back(v + min_value);
+      for (const auto v : shifted) {
+        if (min_value > std::numeric_limits<uint64_t>::max() - v) {
+          throw invalid_data("u64 FOR overflow");
+        }
+        out.push_back(v + min_value);
+      }
       return out;
     }
     default:
@@ -397,7 +402,11 @@ std::vector<int64_t> decode_i64_vector(Reader& reader, VectorCodec codec) {
       const auto shifted = decode_i64_direct_bitpack(reader);
       std::vector<int64_t> out;
       out.reserve(shifted.size());
-      for (const auto v : shifted) out.push_back(v + min_value);
+      for (const auto v : shifted) {
+        int64_t sum = 0;
+        if (!checked_add_i64(v, min_value, sum)) throw invalid_data("i64 FOR overflow");
+        out.push_back(sum);
+      }
       return out;
     }
     case VectorCodec::DeltaForBitpack: {
@@ -406,7 +415,11 @@ std::vector<int64_t> decode_i64_vector(Reader& reader, VectorCodec codec) {
       const auto shifted = decode_i64_direct_bitpack(reader);
       std::vector<int64_t> deltas;
       deltas.reserve(shifted.size());
-      for (const auto v : shifted) deltas.push_back(v + min_value);
+      for (const auto v : shifted) {
+        int64_t sum = 0;
+        if (!checked_add_i64(v, min_value, sum)) throw invalid_data("i64 FOR overflow");
+        deltas.push_back(sum);
+      }
       return undelta_values(deltas);
     }
     case VectorCodec::DeltaDeltaBitpack:

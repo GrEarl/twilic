@@ -1,6 +1,19 @@
 use twilic::{Message, TwilicCodec, Value, wire::Reader};
 
 #[test]
+fn i64_for_bitpack_overflow_is_an_error() {
+    // Found by cargo-fuzz decode_message: FOR reconstruction must not panic on overflow.
+    let bytes = [
+        5, 1, 64, 3, 255, 255, 188, 255, 255, 255, 5, 1, 64, 3, 255, 255, 188, 255, 255, 255, 255,
+        251, 255, 0, 254, 255, 255, 255, 251, 255, 0, 254, 255, 255,
+    ];
+    let err = TwilicCodec::default()
+        .decode_message(&bytes)
+        .expect_err("expected FOR overflow rejection");
+    assert!(err.to_string().contains("overflow"));
+}
+
+#[test]
 fn session_nesting_is_an_error_and_codec_remains_usable() {
     let mut value = Value::Null;
     for _ in 0..70 {

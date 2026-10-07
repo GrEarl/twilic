@@ -442,7 +442,7 @@ func decodeV2ValueFromTag(reader *Reader, state *v2DecodeState, tag byte) (Value
 		if err != nil {
 			return Value{}, err
 		}
-		if int(id) >= len(state.strings) {
+		if id >= uint64(len(state.strings)) {
 			return Value{}, invalidData("unknown str_ref id")
 		}
 		return NewString(state.strings[id]), nil
@@ -519,7 +519,7 @@ func decodeV2ArrayBody(reader *Reader, state *v2DecodeState, length int) (Value,
 				return Value{}, err
 			}
 		}
-		for int(shapeID) >= len(state.shapes) {
+		for shapeID >= uint64(len(state.shapes)) {
 			state.shapes = append(state.shapes, nil)
 		}
 		state.shapes[shapeID] = keys
@@ -591,7 +591,7 @@ func decodeV2Key(reader *Reader, state *v2DecodeState) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		if int(id) >= len(state.keys) {
+		if id >= uint64(len(state.keys)) {
 			return "", invalidData("unknown key_ref id")
 		}
 		return state.keys[id], nil

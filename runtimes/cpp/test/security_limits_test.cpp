@@ -2,13 +2,13 @@
 #include "twilic/v2.hpp"
 #include "twilic/codec.hpp"
 #include "twilic/errors.hpp"
-#include <cassert>
+#include <cstdlib>
 #include <functional>
 using namespace twilic;
 static void rejects(const std::function<void()>& action) {
   bool rejected = false;
   try { action(); } catch (const TwilicError&) { rejected = true; }
-  assert(rejected);
+  if (!rejected) std::abort();
 }
 int main() {
   Buffer tiny{0}; Reader reader(tiny);

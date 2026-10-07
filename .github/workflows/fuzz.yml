@@ -77,3 +77,48 @@ jobs:
             duration="60s"
           fi
           go test ./internal/core -run=^$ -fuzz=FuzzDecode -fuzztime="${duration}"
+
+  native:
+    name: ${{ matrix.runtime }} (libFuzzer)
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        runtime: [c, cpp]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Install Clang
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends clang
+
+      - name: Build and fuzz decode
+        env:
+          ASAN_OPTIONS: detect_leaks=0:halt_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            duration="900"
+          elif [ -n "${{ github.event.inputs.duration }}" ]; then
+            duration="${{ github.event.inputs.duration }}"
+          else
+            duration="60"
+          fi
+          flags="-O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all"
+          build_dir="runtimes/${{ matrix.runtime }}/build-fuzz"
+          cmake -S "runtimes/${{ matrix.runtime }}" -B "${build_dir}" \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DTWILIC_BUILD_FUZZERS=ON \
+            -DCMAKE_C_COMPILER=clang \
+            -DCMAKE_CXX_COMPILER=clang++ \
+            -DCMAKE_C_FLAGS="${flags}" \
+            -DCMAKE_CXX_FLAGS="${flags}"
+          cmake --build "${build_dir}" --target decode_fuzzer --parallel "$(nproc)"
+          mkdir -p "runtimes/${{ matrix.runtime }}/fuzz/corpus"
+          cp -R "runtimes/${{ matrix.runtime }}/fuzz/seed_corpus/." "runtimes/${{ matrix.runtime }}/fuzz/corpus/"
+          "${build_dir}/decode_fuzzer" -max_total_time="${duration}" "runtimes/${{ matrix.runtime }}/fuzz/corpus"

@@ -49,3 +49,31 @@ jobs:
           mkdir -p "fuzz/corpus/${{ matrix.target }}"
           cp -R "fuzz/seed_corpus/${{ matrix.target }}/." "fuzz/corpus/${{ matrix.target }}/"
           cargo +nightly fuzz run "${{ matrix.target }}" -- -max_total_time="${DURATION}"
+
+  go:
+    name: Go (Decode)
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: "1.22.x"
+          cache: false
+
+      - name: Fuzz Decode
+        working-directory: runtimes/go
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            duration="900s"
+          elif [ -n "${{ github.event.inputs.duration }}" ]; then
+            duration="${{ github.event.inputs.duration }}s"
+          else
+            duration="60s"
+          fi
+          go test ./internal/core -run=^$ -fuzz=FuzzDecode -fuzztime="${duration}"

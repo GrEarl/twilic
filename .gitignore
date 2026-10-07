@@ -19,3 +19,4 @@ node_modules/
 **/vendor/
 **/native/*.node
 **/wasm/pkg/*.wasm
+**/build-*-check/

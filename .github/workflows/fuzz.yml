@@ -1,0 +1,47 @@
+name: Fuzz
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "20 4 * * *"
+  workflow_dispatch:
+    inputs:
+      duration:
+        description: "Max total fuzz time in seconds"
+        required: false
+        default: "120"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fuzz-${{ github.event.pull_request.number || github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+jobs:
+  rust:
+    name: Rust (${{ matrix.target }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [decode, decode_message]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Rust nightly
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz --locked
+
+      - name: Fuzz ${{ matrix.target }}
+        working-directory: runtimes/rust
+        env:
+          DURATION: ${{ github.event_name == 'schedule' && '900' || github.event.inputs.duration || '60' }}
+        run: cargo fuzz run "${{ matrix.target }}" -- -max_total_time="${DURATION}"
